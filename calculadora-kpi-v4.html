@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CalculaMSK</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Roboto+Mono:wght@500;600&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue:      #3d3dbe;
+    --blue-mid:  #4a4acc;
+    --blue-light:#5c5cdd;
+    --blue-pale: #eeeeff;
+    --white:     #ffffff;
+    --gray-bg:   #f2f3f8;
+    --gray-line: #ddddf0;
+    --text:      #1a1a3e;
+    --text-mid:  #4a4a7a;
+    --text-soft: #8888aa;
+    --green:     #0db87a;
+    --orange:    #e07b00;
+    --red-err:   #d7222a;
+    --font: "Nunito", sans-serif;
+    --mono: "Roboto Mono", monospace;
+    --radius: 14px;
+    --shadow: 0 2px 18px rgba(61,61,190,0.10);
+  }
+
+  body { font-family: var(--font); background: var(--gray-bg); color: var(--text); min-height: 100vh; }
+
+  .screen { display: none; }
+  .screen.active { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    background: var(--blue);
+    height: 62px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 18px;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .topbar-logo {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-box {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 900; color: var(--blue);
+    font-family: var(--font);
+    flex-shrink: 0;
+  }
+  .logo-text {
+    font-size: 1.05rem; font-weight: 900; color: #fff;
+    letter-spacing: -0.01em;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .logo-sub {
+    font-size: 0.65rem; font-weight: 700;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-left: 6px;
+  }
+  .topbar-title {
+    font-size: 0.9rem; font-weight: 800; color: #fff;
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .back-btn {
+    background: rgba(255,255,255,0.15); border: none; border-radius: 8px;
+    width: 34px; height: 34px; color: #fff; font-size: 1.05rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s; flex-shrink: 0;
+  }
+  .back-btn:hover { background: rgba(255,255,255,0.28); }
+  .topbar-dot { width: 8px; height: 8px; border-radius: 50%; margin-left: auto; }
+
+  /* ── HERO ── */
+  .home-hero {
+    background: var(--blue);
+    padding: 28px 20px 30px;
+    text-align: center;
+    border-bottom: 4px solid var(--blue-light);
+  }
+  .home-hero h1 {
+    font-size: 2rem; font-weight: 900; color: #fff; letter-spacing: -0.02em;
+  }
+  .home-hero p {
+    color: rgba(255,255,255,0.6); font-size: 0.78rem;
+    margin-top: 5px; letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
+  /* ── HOME BODY ── */
+  .home-body { padding: 22px 16px 32px; flex: 1; }
+  .section-label {
+    font-size: 0.68rem; font-weight: 800; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--blue); margin-bottom: 14px; padding-left: 2px;
+  }
+
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 12px; max-width: 480px; margin: 0 auto;
+  }
+  .kpi-card {
+    background: var(--white); border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border-left: 5px solid var(--c, #aaa);
+    padding: 20px 14px 18px;
+    cursor: pointer;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+    transition: transform 0.18s, box-shadow 0.18s;
+  }
+  .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(61,61,190,0.16); }
+  .kpi-card[data-kpi="nps"]          { --c: var(--blue); }
+  .kpi-card[data-kpi="reingreso"]    { --c: var(--orange); }
+  .kpi-card[data-kpi="tpa"]          { --c: var(--green); }
+  .kpi-card[data-kpi="derivaciones"] { --c: #9b59b6; }
+
+  .kpi-icon {
+    width: 42px; height: 42px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+  }
+  .kpi-card[data-kpi="nps"] .kpi-icon          { background: var(--blue-pale); }
+  .kpi-card[data-kpi="reingreso"] .kpi-icon    { background: #fff4e5; }
+  .kpi-card[data-kpi="tpa"] .kpi-icon          { background: #e6faf3; }
+  .kpi-card[data-kpi="derivaciones"] .kpi-icon { background: #f5eeff; }
+
+  .kpi-label { font-size: 0.92rem; font-weight: 800; color: var(--text); }
+  .kpi-arrow { font-size: 0.7rem; color: var(--text-soft); margin-left: auto; align-self: flex-end; }
+
+  /* ── CALC BODY ── */
+  .calc-body {
+    padding: 20px 16px 32px; max-width: 480px; width: 100%;
+    margin: 0 auto; display: flex; flex-direction: column; gap: 14px; flex: 1;
+  }
+
+  .section-divider {
+    font-size: 0.68rem; font-weight: 800; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--blue);
+    border-bottom: 2px solid var(--blue-pale); padding-bottom: 6px;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label {
+    font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text-mid);
+  }
+  .field input {
+    background: #fff; border: 1.5px solid var(--gray-line);
+    border-radius: 10px; padding: 13px 14px;
+    color: var(--text); font-family: var(--mono);
+    font-size: 1rem; font-weight: 600; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s; width: 100%;
+    -moz-appearance: textfield;
+    box-shadow: 0 1px 4px rgba(61,61,190,0.05);
+  }
+  .field input::-webkit-outer-spin-button,
+  .field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .field input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(61,61,190,0.12); }
+  .field input::placeholder { color: #bbb; font-weight: 400; }
+
+  .calc-btn {
+    background: var(--blue); color: #fff; border: none;
+    border-radius: 10px; padding: 15px;
+    font-family: var(--font); font-size: 0.9rem; font-weight: 800;
+    letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+    box-shadow: 0 4px 16px rgba(61,61,190,0.3);
+  }
+  .calc-btn:hover { background: var(--blue-mid); transform: translateY(-1px); }
+  .calc-btn:active { transform: translateY(0); }
+
+  /* RESULT */
+  .result-box {
+    background: var(--blue); border-radius: var(--radius);
+    padding: 22px 18px; display: none;
+    flex-direction: column; align-items: center; gap: 10px;
+    animation: slideUp 0.25s ease;
+    box-shadow: 0 6px 24px rgba(61,61,190,0.25);
+  }
+  .result-box.visible { display: flex; }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-label {
+    font-size: 0.65rem; font-weight: 800; letter-spacing: 0.14em;
+    text-transform: uppercase; color: rgba(255,255,255,0.6);
+  }
+  .result-value {
+    font-family: var(--mono); font-size: 2.8rem;
+    font-weight: 600; line-height: 1; color: #fff;
+  }
+  .result-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%;
+  }
+  .result-cell { text-align: center; }
+  .result-cell .result-value { font-size: 2rem; }
+
+  .result-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 14px; border-radius: 99px;
+    font-size: 0.75rem; font-weight: 800; letter-spacing: 0.04em;
+  }
+  .result-badge.ok   { background: rgba(13,184,122,0.2); color: #5fffc0; }
+  .result-badge.warn { background: rgba(255,200,80,0.2); color: #ffd666; }
+  .result-badge.bad  { background: rgba(255,80,80,0.2);  color: #ff8888; }
+
+  .result-detail {
+    font-size: 0.78rem; color: rgba(255,255,255,0.7);
+    text-align: center; line-height: 1.5;
+  }
+
+  .divider { height: 1px; background: rgba(255,255,255,0.15); border: none; width: 100%; margin: 2px 0; }
+
+  /* NPS breakdown */
+  .nps-breakdown { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; width: 100%; }
+  .nps-col { border-radius: 10px; padding: 11px 6px; text-align: center; background: rgba(255,255,255,0.1); }
+  .nc-label { font-size: 0.6rem; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+  .nc-val { font-family: var(--mono); font-size: 1.1rem; font-weight: 600; margin-top: 3px; color: #fff; }
+
+  /* Gap box */
+  .gap-box {
+    width: 100%; border-radius: 10px;
+    background: rgba(255,255,255,0.12);
+    border: 1.5px solid rgba(255,255,255,0.25);
+    padding: 16px 14px; text-align: center; margin-top: 2px;
+  }
+  .gap-box-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #ffd666; margin-bottom: 6px; }
+  .gap-box-val { font-family: var(--mono); font-size: 2.2rem; font-weight: 600; color: #fff; }
+  .gap-box-detail { font-size: 0.74rem; color: rgba(255,255,255,0.7); margin-top: 6px; line-height: 1.5; }
+
+  .reset-btn {
+    background: transparent; border: 1.5px solid var(--gray-line);
+    border-radius: 10px; padding: 12px; color: var(--text-soft);
+    font-family: var(--font); font-size: 0.8rem; font-weight: 700;
+    cursor: pointer; transition: border-color 0.15s, color 0.15s; letter-spacing: 0.04em;
+  }
+  .reset-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+  .footer {
+    text-align: center; color: var(--text-soft); font-size: 0.7rem;
+    padding: 20px; border-top: 1px solid var(--gray-line);
+    background: #fff; margin-top: auto;
+  }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="home" class="screen active">
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="logo-box">X</div>
+      <span class="logo-text">x-tartek</span>
+      <span class="logo-sub">/ MSK</span>
+    </div>
+  </div>
+  <div class="home-hero">
+    <h1>CalculaMSK</h1>
+    <p>Calculadora de métricas · Startek</p>
+  </div>
+  <div class="home-body">
+    <div class="section-label">Seleccioná una métrica</div>
+    <div class="kpi-grid">
+      <div class="kpi-card" data-kpi="nps" onclick="goTo('screen-nps')">
+        <div class="kpi-icon">📊</div>
+        <div class="kpi-label">NPS</div>
+      </div>
+      <div class="kpi-card" data-kpi="reingreso" onclick="goTo('screen-reingreso')">
+        <div class="kpi-icon">🔄</div>
+        <div class="kpi-label">Reingreso</div>
+      </div>
+      <div class="kpi-card" data-kpi="tpa" onclick="goTo('screen-tpa')">
+        <div class="kpi-icon">⏱️</div>
+        <div class="kpi-label">TPA</div>
+      </div>
+      <div class="kpi-card" data-kpi="derivaciones" onclick="goTo('screen-derivaciones')">
+        <div class="kpi-icon">↗️</div>
+        <div class="kpi-label">Derivaciones</div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">Desarrollado por Romina Lima · Startek</div>
+</div>
+
+<!-- NPS -->
+<div id="screen-nps" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goTo('home')">←</button>
+    <div class="topbar-title">NPS</div>
+    <div class="topbar-dot" style="background:rgba(255,255,255,0.5)"></div>
+  </div>
+  <div class="calc-body">
+    <div class="section-divider">Datos de encuestas</div>
+    <div class="field"><label>Promotores (9-10)</label><input type="number" id="nps-prom" placeholder="0" min="0"/></div>
+    <div class="field"><label>Neutros (7-8)</label><input type="number" id="nps-neut" placeholder="0" min="0"/></div>
+    <div class="field"><label>Detractores (0-6)</label><input type="number" id="nps-detr" placeholder="0" min="0"/></div>
+    <div class="field"><label>Objetivo NPS (%)</label><input type="number" id="nps-objetivo" placeholder="Ej: 73.76" min="0" max="100" step="0.01"/></div>
+    <button class="calc-btn" onclick="calcNPS()">Calcular NPS</button>
+    <div class="result-box" id="nps-result">
+      <div class="result-row">
+        <div class="result-cell"><div class="result-label">Resultado</div><div id="nps-val" class="result-value">—</div></div>
+        <div class="result-cell"><div class="result-label">Cumplimiento</div><div id="nps-cumpl" class="result-value">—</div></div>
+      </div>
+      <div class="result-badge" id="nps-badge">—</div>
+      <div class="result-detail" id="nps-detail"></div>
+      <hr class="divider"/>
+      <div class="nps-breakdown">
+        <div class="nps-col"><div class="nc-label">Promotores</div><div class="nc-val" id="nps-pct-prom">—</div></div>
+        <div class="nps-col"><div class="nc-label">Neutros</div><div class="nc-val" id="nps-pct-neut">—</div></div>
+        <div class="nps-col"><div class="nc-label">Detractores</div><div class="nc-val" id="nps-pct-detr">—</div></div>
+      </div>
+      <div id="nps-gap-box" class="gap-box" style="display:none;">
+        <div class="gap-box-label">Promotores nuevos para llegar al objetivo</div>
+        <div id="nps-gap-val" class="gap-box-val">—</div>
+        <div id="nps-gap-detail" class="gap-box-detail"></div>
+      </div>
+    </div>
+    <button class="reset-btn" onclick="resetScreen('nps')">↺ Limpiar</button>
+  </div>
+</div>
+
+<!-- REINGRESO -->
+<div id="screen-reingreso" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goTo('home')">←</button>
+    <div class="topbar-title">Reingreso</div>
+  </div>
+  <div class="calc-body">
+    <div class="section-divider">Datos del período</div>
+    <div class="field"><label>Casos con reingreso</label><input type="number" id="rei-casos" placeholder="0" min="0"/></div>
+    <div class="field"><label>Total de contactos</label><input type="number" id="rei-total" placeholder="0" min="0"/></div>
+    <div class="field"><label>Objetivo 🎯 de reingreso (%)</label><input type="number" id="rei-meta" placeholder="Ej: 15" min="0" max="100"/></div>
+    <button class="calc-btn" onclick="calcReingreso()">Calcular Reingreso</button>
+    <div class="result-box" id="rei-result">
+      <div class="result-label">Tasa de Reingreso</div>
+      <div class="result-value" id="rei-val">—</div>
+      <div class="result-badge" id="rei-badge">—</div>
+      <div class="result-detail" id="rei-detail"></div>
+      <div id="rei-gap-box" class="gap-box" style="display:none;">
+        <div class="gap-box-label" id="rei-gap-label">Gestiones necesarias para el objetivo</div>
+        <div id="rei-gap-val" class="gap-box-val">—</div>
+        <div id="rei-gap-detail" class="gap-box-detail"></div>
+      </div>
+    </div>
+    <button class="reset-btn" onclick="resetScreen('rei')">↺ Limpiar</button>
+  </div>
+</div>
+
+<!-- TPA -->
+<div id="screen-tpa" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goTo('home')">←</button>
+    <div class="topbar-title">TPA</div>
+  </div>
+  <div class="calc-body">
+
+    <!-- TABS -->
+    <div style="display:flex;gap:8px;">
+      <button id="tab-online" onclick="switchTpaTab('online')" style="flex:1;padding:11px;border-radius:10px;border:2px solid var(--blue);background:var(--blue);color:#fff;font-family:var(--font);font-size:0.78rem;font-weight:800;letter-spacing:0.06em;cursor:pointer;">⚡ ONLINE</button>
+      <button id="tab-tablero" onclick="switchTpaTab('tablero')" style="flex:1;padding:11px;border-radius:10px;border:2px solid var(--gray-line);background:#fff;color:var(--text-mid);font-family:var(--font);font-size:0.78rem;font-weight:800;letter-spacing:0.06em;cursor:pointer;">📊 TABLERO</button>
+    </div>
+
+    <!-- MODO ONLINE -->
+    <div id="tpa-modo-online">
+      <div class="section-divider">Dato rápido del dashboard</div>
+      <div class="field">
+        <label>Promedio de TPA (MM:SS)</label>
+        <input type="text" id="tpa-prom" placeholder="Ej: 03:46" maxlength="7"/>
+        <span style="font-size:0.7rem;color:var(--text-soft);margin-top:2px;">Tal como aparece en el dashboard online</span>
+      </div>
+      <div class="field">
+        <label>Llamadas atendidas (NIM)</label>
+        <input type="number" id="tpa-cant" placeholder="Ej: 44" min="0"/>
+      </div>
+    </div>
+
+    <!-- MODO TABLERO -->
+    <div id="tpa-modo-tablero" style="display:none;">
+      <div class="section-divider">Componentes del tablero</div>
+      <div class="field"><label>RING (HH:MM:SS)</label><input type="text" id="tpa-ring" placeholder="00:00:01" maxlength="8"/></div>
+      <div class="field"><label>ACD IN (HH:MM:SS)</label><input type="text" id="tpa-acdin" placeholder="00:03:42" maxlength="8"/></div>
+      <div class="field"><label>ACD OUT (HH:MM:SS)</label><input type="text" id="tpa-acdout" placeholder="00:00:00" maxlength="8"/></div>
+      <div class="field"><label>ACW IN OUT (HH:MM:SS)</label><input type="text" id="tpa-acw" placeholder="00:00:03" maxlength="8"/></div>
+      <div class="field"><label>HOLD (HH:MM:SS)</label><input type="text" id="tpa-hold" placeholder="00:00:09" maxlength="8"/></div>
+      <div class="field"><label>Llamadas atendidas</label><input type="number" id="tpa-cant2" placeholder="Ej: 1528" min="0"/></div>
+    </div>
+
+    <div class="field">
+      <label>Meta TPA (MM:SS)</label>
+      <input type="text" id="tpa-meta" placeholder="Ej: 03:54" maxlength="8"/>
+    </div>
+
+    <button class="calc-btn" onclick="calcTPA()">Calcular TPA</button>
+
+    <div class="result-box" id="tpa-result">
+      <div class="result-row">
+        <div class="result-cell">
+          <div class="result-label">TPA Actual</div>
+          <div id="tpa-val" class="result-value">—</div>
+        </div>
+        <div class="result-cell">
+          <div class="result-label">Cumplimiento</div>
+          <div id="tpa-cumpl" class="result-value">—</div>
+        </div>
+      </div>
+      <div class="result-badge" id="tpa-badge">—</div>
+      <div class="result-detail" id="tpa-detail"></div>
+      <div id="tpa-gap-box" class="gap-box" style="display:none;">
+        <div class="gap-box-label">Llamadas en meta necesarias para bajar el promedio</div>
+        <div id="tpa-gap-val" class="gap-box-val">—</div>
+        <div id="tpa-gap-detail" class="gap-box-detail"></div>
+      </div>
+    </div>
+    <button class="reset-btn" onclick="resetScreen('tpa')">↺ Limpiar</button>
+  </div>
+</div>
+
+<!-- DERIVACIONES -->
+<div id="screen-derivaciones" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="goTo('home')">←</button>
+    <div class="topbar-title">Derivaciones</div>
+  </div>
+  <div class="calc-body">
+    <div class="section-divider">Control de derivaciones</div>
+    <div class="field"><label>Casos derivados</label><input type="number" id="der-casos" placeholder="0" min="0"/></div>
+    <div class="field"><label>Total de contactos</label><input type="number" id="der-total" placeholder="0" min="0"/></div>
+    <div class="field"><label>Meta de derivación (%)</label><input type="number" id="der-meta" placeholder="Ej: 20" min="0" max="100"/></div>
+    <button class="calc-btn" onclick="calcDerivaciones()">Calcular Derivaciones</button>
+    <div class="result-box" id="der-result">
+      <div class="result-label">Tasa de Derivación</div>
+      <div class="result-value" id="der-val">—</div>
+      <div class="result-badge" id="der-badge">—</div>
+      <div class="result-detail" id="der-detail"></div>
+    </div>
+    <button class="reset-btn" onclick="resetScreen('der')">↺ Limpiar</button>
+  </div>
+</div>
+
+<script>
+  // ── Navigation ──
+  function goTo(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  // ── Helpers ──
+  function showBadge(el, text, cls) {
+    el.textContent = text;
+    el.className = 'result-badge ' + cls;
+  }
+  function showResult(id) {
+    document.getElementById(id).classList.add('visible');
+  }
+  function resetScreen(prefix) {
+    document.querySelectorAll(`[id^="${prefix}-"]`).forEach(el => {
+      if (el.tagName === 'INPUT') el.value = '';
+      if (el.classList.contains('result-box')) el.classList.remove('visible');
+    });
+  }
+
+  // ── NPS ──
+  function calcNPS() {
+    const p = parseFloat(document.getElementById('nps-prom').value) || 0;
+    const n = parseFloat(document.getElementById('nps-neut').value) || 0;
+    const d = parseFloat(document.getElementById('nps-detr').value) || 0;
+    const objInput = parseFloat(document.getElementById('nps-objetivo').value);
+    const total = p + n + d;
+    if (total === 0) { alert('Ingresá al menos un valor.'); return; }
+
+    const pctP = (p / total * 100);
+    const pctD = (d / total * 100);
+    const nps  = pctP - pctD;
+
+    const objetivo = !isNaN(objInput) ? objInput : 75;
+    const cumplimiento = (nps / objetivo * 100);
+
+    document.getElementById('nps-val').textContent = nps.toFixed(2) + '%';
+    document.getElementById('nps-cumpl').textContent = cumplimiento.toFixed(2) + '%';
+    document.getElementById('nps-pct-prom').textContent = pctP.toFixed(1) + '%';
+    document.getElementById('nps-pct-neut').textContent = (n / total * 100).toFixed(1) + '%';
+    document.getElementById('nps-pct-detr').textContent = pctD.toFixed(1) + '%';
+
+    const badge   = document.getElementById('nps-badge');
+    const detail  = document.getElementById('nps-detail');
+    const gapBox  = document.getElementById('nps-gap-box');
+    const gapVal  = document.getElementById('nps-gap-val');
+    const gapDetail = document.getElementById('nps-gap-detail');
+
+    // Colorear cumplimiento según resultado
+    const cumplEl = document.getElementById('nps-cumpl');
+    cumplEl.style.color = cumplimiento >= 100 ? 'var(--accent-nps)' : cumplimiento >= 95 ? '#ffd166' : '#ff6b6b';
+
+    if (nps >= objetivo) {
+      showBadge(badge, '🏆 Excelente', 'ok');
+      detail.textContent = 'Superás el objetivo de ' + objetivo.toFixed(2) + '%. ¡Seguí así!';
+      gapBox.style.display = 'none';
+    } else {
+      if (cumplimiento >= 95) {
+        showBadge(badge, '👍 Adecuado', 'warn');
+        detail.textContent = 'Cumplimiento ' + cumplimiento.toFixed(2) + '% — cerca del objetivo ' + objetivo.toFixed(2) + '%.';
+      } else if (nps >= 0) {
+        showBadge(badge, '⚠️ Por mejorar', 'warn');
+        detail.textContent = 'Cumplimiento ' + cumplimiento.toFixed(2) + '% — objetivo ' + objetivo.toFixed(2) + '%.';
+      } else {
+        showBadge(badge, '❌ Crítico', 'bad');
+        detail.textContent = 'NPS negativo. Cumplimiento ' + cumplimiento.toFixed(2) + '%.';
+      }
+      // Sumar x promotores nuevos (encuestas nuevas que se agregan al total)
+      // (p + x) / (total + x) * 100 - d / (total + x) * 100 = objetivo
+      // (p + x - d) / (total + x) = objetivo / 100
+      // p + x - d = (objetivo/100) * (total + x)
+      // p + x - d = (objetivo/100)*total + (objetivo/100)*x
+      // x - (objetivo/100)*x = (objetivo/100)*total - p + d
+      // x * (1 - objetivo/100) = (objetivo/100)*total - p + d
+      // x = ((objetivo/100)*total - p + d) / (1 - objetivo/100)
+      const objFrac = objetivo / 100;
+      const x = (objFrac * total - p + d) / (1 - objFrac);
+      const faltantes = Math.ceil(Math.max(x, 0));
+      const nuevoTotal = total + faltantes;
+      const npsProyectado = ((p + faltantes - d) / nuevoTotal * 100).toFixed(2);
+      gapBox.style.display = 'block';
+      gapVal.textContent = '+' + faltantes;
+      gapDetail.textContent = 'Sumando ' + faltantes + ' promotor' + (faltantes === 1 ? '' : 'es') +
+        ' nuevo' + (faltantes === 1 ? '' : 's') + ' en próximas atenciones, tu NPS sería ' +
+        npsProyectado + '% sobre ' + nuevoTotal + ' encuestas (objetivo: ' + objetivo.toFixed(2) + '%).';
+    }
+    showResult('nps-result');
+  }
+
+  // ── REINGRESO ──
+  function calcReingreso() {
+    const casos = parseFloat(document.getElementById('rei-casos').value) || 0;
+    const total = parseFloat(document.getElementById('rei-total').value) || 0;
+    const meta  = parseFloat(document.getElementById('rei-meta').value);
+    if (total === 0) { alert('El total de contactos no puede ser 0.'); return; }
+    const tasa = (casos / total * 100);
+    document.getElementById('rei-val').textContent = tasa.toFixed(2) + '%';
+    const badge = document.getElementById('rei-badge');
+    const detail = document.getElementById('rei-detail');
+    const gapBox = document.getElementById('rei-gap-box');
+    const gapLabel = document.getElementById('rei-gap-label');
+    const gapVal = document.getElementById('rei-gap-val');
+    const gapDetail = document.getElementById('rei-gap-detail');
+    gapBox.style.display = 'none';
+
+    if (!isNaN(meta)) {
+      if (tasa <= meta) {
+        showBadge(badge, '✅ Dentro del objetivo', 'ok');
+        const frasesOk = [
+          '¡Vas muy bien, seguí así! 💪',
+          '¡Excelente gestión, mantené el ritmo! 🚀',
+          '¡Buen trabajo, estás encaminado al éxito! ⭐',
+          '¡Así se hace, seguí sumando calidad! 🎉'
+        ];
+        const fraseOk = frasesOk[Math.floor(Math.random() * frasesOk.length)];
+        detail.textContent = `Objetivo: ≤${meta}% — estás en ${tasa.toFixed(2)}%. ${fraseOk}`;
+        // Margen: cuántos casos de reingreso más podrían sumarse sin salir del objetivo
+        const casosPermitidos = Math.floor((meta / 100) * total);
+        const margen = casosPermitidos - casos;
+        if (margen > 0) {
+          gapLabel.textContent = 'Margen dentro del objetivo';
+          gapBox.style.display = 'block';
+          gapVal.textContent = '+' + margen;
+          gapDetail.textContent = `Podrías sumar hasta ${margen} reingreso${margen === 1 ? '' : 's'} más sin salir del objetivo (${meta}%).`;
+        }
+      } else {
+        showBadge(badge, '❌ Fuera del objetivo', 'bad');
+        const frasesMejora = [
+          '¡Todavía estás a tiempo de revertirlo! 💪',
+          '¡Con foco en la calidad de contacto lo lográs! 🎯',
+          '¡Un esfuerzo más y llegás a la meta! 🚀',
+          '¡Vos podés, cada gestión suma! ⭐'
+        ];
+        const fraseMejora = frasesMejora[Math.floor(Math.random() * frasesMejora.length)];
+        detail.textContent = `Objetivo: ≤${meta}% — excedés por ${(tasa - meta).toFixed(2)} pp. ${fraseMejora}`;
+        // Gestiones (contactos sin reingreso) que faltan sumar para bajar la tasa al objetivo
+        // casos / (total + x) * 100 = meta  →  x = casos*100/meta - total
+        const x = (casos * 100 / meta) - total;
+        const faltantes = Math.ceil(Math.max(x, 0));
+        const nuevoTotal = total + faltantes;
+        const tasaProyectada = (casos / nuevoTotal * 100).toFixed(2);
+        gapLabel.textContent = 'Gestiones necesarias para el objetivo';
+        gapBox.style.display = 'block';
+        gapVal.textContent = faltantes;
+        gapDetail.textContent = `Sumando ${faltantes} gestion${faltantes === 1 ? '' : 'es'} más sin reingreso (manteniendo ${casos} casos), la tasa bajaría a ${tasaProyectada}%.`;
+      }
+    } else {
+      showBadge(badge, tasa < 15 ? '✅ Bajo' : tasa < 25 ? '⚠️ Moderado' : '❌ Alto', tasa < 15 ? 'ok' : tasa < 25 ? 'warn' : 'bad');
+      detail.textContent = `${casos} reingresos sobre ${total} contactos.`;
+    }
+    showResult('rei-result');
+  }
+
+  // ── TPA TABS ──
+  function switchTpaTab(tab) {
+    const onlineDiv  = document.getElementById('tpa-modo-online');
+    const tableroDiv = document.getElementById('tpa-modo-tablero');
+    const btnOnline  = document.getElementById('tab-online');
+    const btnTablero = document.getElementById('tab-tablero');
+    if (tab === 'online') {
+      onlineDiv.style.display  = '';
+      tableroDiv.style.display = 'none';
+      btnOnline.style.background  = 'var(--blue)'; btnOnline.style.color  = '#fff'; btnOnline.style.borderColor  = 'var(--blue)';
+      btnTablero.style.background = '#fff';         btnTablero.style.color = 'var(--text-mid)'; btnTablero.style.borderColor = 'var(--gray-line)';
+    } else {
+      onlineDiv.style.display  = 'none';
+      tableroDiv.style.display = '';
+      btnTablero.style.background = 'var(--blue)'; btnTablero.style.color = '#fff'; btnTablero.style.borderColor = 'var(--blue)';
+      btnOnline.style.background  = '#fff';         btnOnline.style.color  = 'var(--text-mid)'; btnOnline.style.borderColor  = 'var(--gray-line)';
+    }
+    document.getElementById('tpa-result').classList.remove('visible');
+  }
+
+  // ── TPA ──
+  function parseMmSs(val) {
+    // Acepta 0:04:22, 04:22, 4:22, 262 (segundos puros)
+    if (!val) return NaN;
+    val = val.trim();
+    const parts = val.split(':').map(Number);
+    if (parts.some(isNaN)) return NaN;
+    if (parts.length === 3) return parts[0]*3600 + parts[1]*60 + parts[2]; // H:MM:SS
+    if (parts.length === 2) return parts[0]*60 + parts[1];                 // MM:SS
+    return parts[0];                                                        // solo segundos
+  }
+  function secsToMmSs(s) {
+    const m = Math.floor(s/60);
+    const sec = Math.round(s%60);
+    return m + ':' + sec.toString().padStart(2,'0');
+  }
+  function calcTPA() {
+    const metaStr = document.getElementById('tpa-meta').value;
+    const meta    = parseMmSs(metaStr);
+    const modoTablero = document.getElementById('tpa-modo-tablero').style.display !== 'none';
+    let tpa, cant;
+
+    if (modoTablero) {
+      const ring   = parseMmSs(document.getElementById('tpa-ring').value)   || 0;
+      const acdin  = parseMmSs(document.getElementById('tpa-acdin').value)  || 0;
+      const acdout = parseMmSs(document.getElementById('tpa-acdout').value) || 0;
+      const acw    = parseMmSs(document.getElementById('tpa-acw').value)    || 0;
+      const hold   = parseMmSs(document.getElementById('tpa-hold').value)   || 0;
+      tpa  = ring + acdin + acdout + acw + hold;
+      cant = parseFloat(document.getElementById('tpa-cant2').value) || 0;
+      if (tpa === 0) { alert('Ingresá al menos un componente del tablero.'); return; }
+    } else {
+      tpa  = parseMmSs(document.getElementById('tpa-prom').value);
+      cant = parseFloat(document.getElementById('tpa-cant').value) || 0;
+      if (isNaN(tpa)) { alert('Ingresá el promedio de TPA en formato MM:SS (ej: 03:46)'); return; }
+    }
+    if (cant === 0) { alert('Ingresá la cantidad de llamadas atendidas.'); return; }
+
+    document.getElementById('tpa-val').textContent = secsToMmSs(tpa);
+
+    const badge   = document.getElementById('tpa-badge');
+    const detail  = document.getElementById('tpa-detail');
+    const gapBox  = document.getElementById('tpa-gap-box');
+    const gapVal  = document.getElementById('tpa-gap-val');
+    const gapDetail = document.getElementById('tpa-gap-detail');
+    const cumplEl = document.getElementById('tpa-cumpl');
+
+    if (!isNaN(meta) && meta > 0) {
+      // Para TPA: cumplimiento = meta/tpa*100 (menor TPA = mejor)
+      const cumpl = (meta / tpa * 100);
+      cumplEl.textContent = cumpl.toFixed(2) + '%';
+      cumplEl.style.color = cumpl >= 100 ? '#5fffc0' : cumpl >= 90 ? '#ffd666' : '#ff8888';
+      document.getElementById('tpa-cumpl').parentElement.style.display = '';
+
+      if (tpa <= meta) {
+        showBadge(badge, '✅ Dentro de meta', 'ok');
+        detail.textContent = 'Tu TPA de ' + secsToMmSs(tpa) + ' está dentro de la meta ' + secsToMmSs(meta) + '.';
+        gapBox.style.display = 'none';
+      } else {
+        showBadge(badge, '❌ Sobre meta', 'bad');
+        const diff = tpa - meta;
+        detail.textContent = 'Superás la meta por ' + secsToMmSs(diff) + ' — meta: ' + secsToMmSs(meta) + '.';
+        // Cuántas llamadas rápidas (en meta) necesita para bajar el promedio a la meta
+        // nueva_suma = tpa*cant + meta*x
+        // nuevo_prom = (tpa*cant + meta*x) / (cant+x) = meta
+        // tpa*cant + meta*x = meta*cant + meta*x  → esto solo se cumple si tpa=meta
+        // Corrección: queremos que el nuevo promedio <= meta
+        // (tpa*cant + meta*x) / (cant+x) = meta
+        // tpa*cant + meta*x = meta*cant + meta*x
+        // tpa*cant = meta*cant  → no funciona con llamadas en meta exacto
+        // Usamos: necesitamos bajar la suma total
+        // Suma actual = tpa * cant
+        // Si agregamos x llamadas de duración meta:
+        // nuevo_prom = (tpa*cant + meta*x) / (cant+x) <= meta
+        // tpa*cant + meta*x <= meta*cant + meta*x
+        // tpa*cant <= meta*cant  → falso si tpa > meta
+        // Necesitamos llamadas MÁS CORTAS que la meta. Usamos 0 seg como mínimo teórico:
+        // (tpa*cant) / (cant+x) = meta  → x = (tpa*cant/meta) - cant
+        const x = (tpa * cant / meta) - cant;
+        const necesita = Math.ceil(Math.max(x, 0));
+        const tpaProyectado = secsToMmSs((tpa*cant) / (cant + necesita));
+        gapBox.style.display = 'block';
+        gapVal.textContent = '+' + necesita;
+        gapDetail.textContent = 'Necesitás ' + necesita + ' llamada' + (necesita===1?'':'s') +
+          ' atendida' + (necesita===1?'':'s') + ' en exactamente la meta (' + secsToMmSs(meta) +
+          ') para que tu promedio baje a ' + tpaProyectado + '.';
+      }
+    } else {
+      cumplEl.textContent = '—';
+      const cls = tpa <= 180 ? 'ok' : tpa <= 240 ? 'warn' : 'bad';
+      const lbl = tpa <= 180 ? '✅ Óptimo' : tpa <= 240 ? '⚠️ Aceptable' : '❌ Elevado';
+      showBadge(badge, lbl, cls);
+      detail.textContent = 'Promedio actual: ' + secsToMmSs(tpa) + ' sobre ' + cant + ' llamadas.';
+      gapBox.style.display = 'none';
+    }
+    showResult('tpa-result');
+  }
+
+  // ── DERIVACIONES ──
+  function calcDerivaciones() {
+    const casos = parseFloat(document.getElementById('der-casos').value) || 0;
+    const total = parseFloat(document.getElementById('der-total').value) || 0;
+    const meta  = parseFloat(document.getElementById('der-meta').value);
+    if (total === 0) { alert('El total de contactos no puede ser 0.'); return; }
+    const tasa = (casos / total * 100);
+    document.getElementById('der-val').textContent = tasa.toFixed(2) + '%';
+    const badge = document.getElementById('der-badge');
+    const detail = document.getElementById('der-detail');
+    if (!isNaN(meta)) {
+      if (tasa <= meta) { showBadge(badge, '✅ Dentro de meta', 'ok'); detail.textContent = `Meta: ≤${meta}% — estás en ${tasa.toFixed(2)}%`; }
+      else { showBadge(badge, '❌ Fuera de meta', 'bad'); detail.textContent = `Meta: ≤${meta}% — excedés por ${(tasa - meta).toFixed(2)} pp.`; }
+    } else {
+      showBadge(badge, tasa < 20 ? '✅ Controlado' : tasa < 35 ? '⚠️ Elevado' : '❌ Crítico', tasa < 20 ? 'ok' : tasa < 35 ? 'warn' : 'bad');
+      detail.textContent = `${casos} derivaciones sobre ${total} contactos.`;
+    }
+    showResult('der-result');
+  }
+
+  // Enter key support
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const active = document.querySelector('.screen.active');
+    if (!active || active.id === 'home') return;
+    const btn = active.querySelector('.calc-btn');
+    if (btn) btn.click();
+  });
+</script>
+</body>
+</html>
